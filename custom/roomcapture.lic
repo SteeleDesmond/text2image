@@ -1,0 +1,88 @@
+=begin
+  Generates images of room description
+
+        author: Steele
+  contributors:
+          game: gs
+          tags: utility, gen
+       version: 0.1
+
+  changelog:
+    version 0.1 (2024-02-13)
+      * My basic script
+=end
+=begin
+    version 0.1 (2024-02-13)
+      * First release.
+=end
+
+module RoomCaptureScript
+  ROOM_DIR = "#{SCRIPT_DIR}/custom/rooms"
+  ROOM_DESC_DIR = "#{ROOM_DIR}/room_descriptions"
+  CURRENT_ROOM_FILE = "#{ROOM_DIR}/current_room.txt"
+  
+  def self.get_self_version
+    data = Script.list.find { |x| x.name == Script.current.name }.inspect
+    return data[/version: ([\d\.]+)/i, 1]
+    # Sanitize the room name to create a valid filename
+    filename = "#{room_name.gsub(/[^\w\s_-]/, '_')}.txt"
+    File.join(ROOM_DESC_DIR, filename)
+  end
+
+  def self.sanitize_filename(name)
+    # Replace characters not allowed in filenames with underscores
+    name.gsub(/[^0-9A-Za-z.\-]/, '_')
+  end
+
+  def self.get_current_room_filename_absolute_path
+    # Use XMLData or a similar mechanism to get the current room's unique identifier
+    room_name = XMLData.room_title
+    room_id = XMLData.room_id
+    sanitized_name = sanitize_filename(room_name)
+    filename = "#{sanitized_name}_#{room_id}.txt"
+    File.join(ROOM_DESC_DIR, filename)
+  end
+
+  def self.enable
+    _respond "roomcapture enabled"
+    _respond "[You can stop this at any time with ;kill #{Script.current.name}]"
+
+    # Ensure the directory exists when the module is loaded
+    Dir.mkdir(ROOM_DIR) unless Dir.exist?(ROOM_DIR)
+    Dir.mkdir(ROOM_DESC_DIR) unless Dir.exist?(ROOM_DESC_DIR)
+
+    current_room = ""
+    while true
+      file_path = get_current_room_filename_absolute_path
+
+      room_name = XMLData.room_title # Get the room name
+      room_description = XMLData.room_description # Get the room description
+      formatted_description = "Name: #{room_name}\nDescription: #{room_description}"
+
+      unless File.exist?(file_path)
+        File.write(file_path, formatted_description)
+        _respond "Room description saved to #{file_path}"
+      else
+        # _respond "Room description for '#{file_path}' already exists."
+      end
+      if current_room != file_path
+        current_room = file_path
+        File.write(CURRENT_ROOM_FILE, current_room)
+        _respond "current room updated"
+      end
+      sleep 1
+    end
+  end
+
+  def self.main
+    if Script.current.vars[1]
+      if Script.current.vars[1].downcase == "on"
+        enable
+      else
+        _respond "Usage: ;roomcapture on, ;kill roomcapture"
+      end
+    end
+  end
+end
+
+RoomCaptureScript.main
