@@ -78,12 +78,10 @@ class GemStoneMonitor:
         print(f'room_image_path: {room_image_path}')
 
         room_desc = open(room_desc_file_path, 'r').read().strip()
-        # print(f"Room description: {room_desc}")
-        prompt = create_prompt(room_desc)
-        print(f'prompt: {prompt}')
+        print(f"Room description: {room_desc}")
 
         if not os.path.exists(room_image_path):
-            self.generate_and_save_image(prompt=prompt, file_path=room_image_path)
+            self.generate_and_save_image(prompt=room_desc, file_path=room_image_path)
 
         # Enqueue the path for GUI update
         self.gui_queue.put(room_image_path)
@@ -109,15 +107,13 @@ class GemStoneMonitor:
                 prompt=prompt,
                 n=n,
                 size=size,
-                quality=quality,
-                style='vivid'
+                quality=quality
             )
             # Assuming the response structure follows the provided documentation; may need adjustments.
             if response.data:
                 image_url = response.data[0].url
                 # Download the image content
                 image_response = requests.get(image_url)
-                # print(f'revised prompt: {image_response.}')
                 if image_response.status_code == 200:
                     # Save the image to a file
                     with open(file_path, 'wb') as file:
@@ -163,13 +159,6 @@ def run_gui(gui_queue):
 
     update_gui()  # Start the GUI update loop
     window.mainloop()
-
-
-def create_prompt(room_desc):
-    prompt = (
-              f'Setting: Medieval, Magic, Fantasy, Hyper-realistic, HD'
-              f'\n{room_desc}')
-    return prompt
 
 
 if __name__ == '__main__':
